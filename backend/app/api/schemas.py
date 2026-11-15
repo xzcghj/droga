@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from app.domain.types import TravelMode, VenueCategory
-
-Title = Field(min_length=1, max_length=100)
 
 
 class ChosenVenue(BaseModel):
@@ -62,3 +60,52 @@ class MeetupSummary(BaseModel):
     venue_category: VenueCategory
     participant_count: int
     chosen_venue_name: str | None
+
+
+def _coords_together(lat: float | None, lon: float | None) -> None:
+    if (lat is None) != (lon is None):
+        raise ValueError("Podaj obie współrzędne (lat i lon) albo żadnej.")
+
+
+class ParticipantCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    start_label: str = Field(min_length=1, max_length=200)
+    mode: TravelMode
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
+
+    @model_validator(mode="after")
+    def _check_coords(self) -> ParticipantCreate:
+        _coords_together(self.lat, self.lon)
+        return self
+
+
+class ParticipantUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    start_label: str | None = Field(default=None, min_length=1, max_length=200)
+    mode: TravelMode | None = None
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
+
+    @model_validator(mode="after")
+    def _check_coords(self) -> ParticipantUpdate:
+        _coords_together(self.lat, self.lon)
+        return self
+
+
+class ParticipantBatchCreate(BaseModel):
+    participants: list[ParticipantCreate] = Field(min_length=1, max_length=10)
+
+
+class GeocodeRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=200)
+
+
+class GeocodeMatch(BaseModel):
+    label: str
+    lat: float
+    lon: float
+
+
+class GeocodeResponse(BaseModel):
+    results: list[GeocodeMatch]

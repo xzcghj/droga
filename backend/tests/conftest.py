@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session
 
 from app.config import Settings
 from app.container import Container
 from app.main import create_app
-from tests.fakes import FakeLLM
+from tests.fakes import FakeGeocoder, FakeLLM
 
 
 @pytest.fixture
@@ -23,7 +24,7 @@ def test_settings() -> Settings:
 def make_container(**overrides) -> Container:
     provider = overrides.pop("provider", None)
     c = Container(
-        geocoder=None,
+        geocoder=FakeGeocoder(),
         routers={},
         fallback_router=None,
         venues=None,
@@ -37,8 +38,13 @@ def make_container(**overrides) -> Container:
 
 
 @pytest.fixture
-def container() -> Container:
-    return make_container()
+def fake_geocoder() -> FakeGeocoder:
+    return FakeGeocoder()
+
+
+@pytest.fixture
+def container(fake_geocoder) -> Container:
+    return make_container(geocoder=fake_geocoder)
 
 
 @pytest.fixture
@@ -65,3 +71,9 @@ def client_factory(test_settings):
 def client(test_settings, container):
     with TestClient(create_app(test_settings, container)) as c:
         yield c
+
+
+@pytest.fixture
+def session(client):
+    with Session(client.app.state.engine) as s:
+        yield s

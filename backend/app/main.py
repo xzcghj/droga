@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import meetups, meta
+from app.api import geocode, meetups, meta, participants
 from app.api.errors import register_error_handlers
 from app.config import Settings
 from app.container import Container, build_container
@@ -43,6 +43,8 @@ def create_app(settings: Settings | None = None, container: Container | None = N
     register_error_handlers(app)
     app.include_router(meta.router, prefix=API_PREFIX)
     app.include_router(meetups.router, prefix=API_PREFIX)
+    app.include_router(participants.router, prefix=API_PREFIX)
+    app.include_router(geocode.router, prefix=API_PREFIX)
     return app
 
 
