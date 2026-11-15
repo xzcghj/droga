@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -109,3 +110,26 @@ class GeocodeMatch(BaseModel):
 
 class GeocodeResponse(BaseModel):
     results: list[GeocodeMatch]
+
+
+class TravelRead(BaseModel):
+    participant_id: int
+    minutes: int
+    mode: TravelMode
+    data_source: Literal["osrm", "estimate"]
+
+
+class CandidateRead(BaseModel):
+    name: str
+    osm_id: str
+    lat: float
+    lon: float
+    max_minutes: int
+    total_minutes: int
+    spread_minutes: int
+    travel: list[TravelRead]
+
+
+class SuggestionsRead(BaseModel):
+    candidates: list[CandidateRead]
+    venue_source: Literal["overpass", "snapshot"]

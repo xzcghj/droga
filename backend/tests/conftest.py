@@ -4,10 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app.adapters.cache import TTLCache
+from app.adapters.routing import HaversineRouter
 from app.config import Settings
 from app.container import Container
+from app.domain.types import Point, Venue
 from app.main import create_app
-from tests.fakes import FakeGeocoder, FakeLLM
+from tests.fakes import FakeGeocoder, FakeLLM, FakeRouter, FakeVenues
 
 
 @pytest.fixture
@@ -25,12 +28,12 @@ def make_container(**overrides) -> Container:
     provider = overrides.pop("provider", None)
     c = Container(
         geocoder=FakeGeocoder(),
-        routers={},
-        fallback_router=None,
-        venues=None,
+        routers={"walk": FakeRouter(), "bike": FakeRouter(), "car": FakeRouter()},
+        fallback_router=HaversineRouter(),
+        venues=FakeVenues([Venue("Kawiarnia Test", "node/1", Point(54.41, 18.58))]),
         llm=None,
         ai_provider=provider,
-        suggestion_cache=None,
+        suggestion_cache=TTLCache(600),
     )
     for key, value in overrides.items():
         setattr(c, key, value)

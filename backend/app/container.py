@@ -11,12 +11,14 @@ from typing import Any
 
 import httpx
 
+from app.adapters.cache import TTLCache
 from app.adapters.geocoding import NominatimGeocoder
 from app.adapters.routing import HaversineRouter, OsrmRouter
 from app.adapters.throttle import RateLimiter
 from app.adapters.venues import FallbackVenues, OverpassVenues, SnapshotVenues
 from app.config import Settings
 
+SUGGESTION_TTL_S = 600
 SNAPSHOT_PATH = Path(__file__).resolve().parents[1] / "data" / "venues_trojmiasto.json"
 
 
@@ -44,4 +46,5 @@ def build_container(settings: Settings) -> Container:
         venues=FallbackVenues(
             OverpassVenues(client, settings.overpass_urls), SnapshotVenues(SNAPSHOT_PATH)
         ),
+        suggestion_cache=TTLCache(SUGGESTION_TTL_S),
     )
