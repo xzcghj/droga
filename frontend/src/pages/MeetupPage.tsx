@@ -5,6 +5,7 @@ import { useMeetup, useSuggestions } from "../api/queries";
 import { ErrorState } from "../components/ErrorState";
 import { MeetupMap } from "../components/MeetupMap";
 import { Skeleton } from "../components/ui/Spinner";
+import { InvitePanel } from "../features/invite/InvitePanel";
 import { ChatImport } from "../features/participants/ChatImport";
 import { ParticipantForm } from "../features/participants/ParticipantForm";
 import { ParticipantList } from "../features/participants/ParticipantList";
@@ -91,6 +92,14 @@ export function MeetupPage() {
         {showPanel && (
           <aside className="w-full space-y-6 overflow-y-auto p-4 md:w-[420px] md:shrink-0 md:border-r md:border-slate-200">
             <ChosenVenueBanner meetup={m} />
+            {m.chosen_venue && (
+              <section aria-labelledby="invite-h" className="space-y-3">
+                <h2 id="invite-h" className="text-base font-semibold">
+                  Zaproszenie
+                </h2>
+                <InvitePanel key={m.chosen_venue.osm_id} meetup={m} />
+              </section>
+            )}
             <section aria-labelledby="people-h" className="space-y-3">
               <h2 id="people-h" className="text-base font-semibold">
                 Uczestnicy ({m.participants.length}/10)
