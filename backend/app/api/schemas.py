@@ -133,3 +133,23 @@ class CandidateRead(BaseModel):
 class SuggestionsRead(BaseModel):
     candidates: list[CandidateRead]
     venue_source: Literal["overpass", "snapshot"]
+
+
+class ParseRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+    meetup_id: int | None = None
+
+
+class DraftParticipant(BaseModel):
+    name: str
+    start_label: str
+    mode: TravelMode | None
+    note: str | None
+    lat: float | None
+    lon: float | None
+    geocode_error: bool
+
+
+class ParticipantDraft(BaseModel):
+    participants: list[DraftParticipant]
+    unparsed: list[str]
