@@ -6,14 +6,8 @@ import { ErrorState } from "../../components/ErrorState";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Spinner";
 import { useToast } from "../../components/ui/Toast";
+import { lineupKey } from "../../lib/lineup";
 import { SuggestionCard } from "./SuggestionCard";
-
-/** Podpis składu: zmiana osób lub ich środków transportu wymaga ponownego „Znajdź miejsce”. */
-function lineup(m: MeetupRead): string {
-  return (
-    m.participants.map((p) => `${p.id}:${p.mode}:${p.lat}:${p.lon}`).join("|") + m.venue_category
-  );
-}
 
 export function SuggestionsPanel({
   meetup,
@@ -23,9 +17,9 @@ export function SuggestionsPanel({
   onHighlight: (id: string | null) => void;
 }) {
   const [requestedFor, setRequestedFor] = useState<string | null>(null);
-  const current = lineup(meetup);
+  const current = lineupKey(meetup);
   const enough = meetup.participants.length >= 2;
-  const suggestions = useSuggestions(meetup.id, enough && requestedFor === current);
+  const suggestions = useSuggestions(meetup.id, current, enough && requestedFor === current);
   const update = useUpdateMeetup(meetup.id);
   const toast = useToast();
   const active = requestedFor === current;
@@ -75,12 +69,27 @@ export function SuggestionsPanel({
       )}
       {active && suggestions.data && (
         <>
-          {suggestions.data.venue_source === "snapshot" && (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              Lista lokali z zapisanej bazy (usługa mapowa niedostępna)
-            </p>
-          )}
-          {suggestions.data.candidates.length === 0 ? (
+          {suggestions.data.venue_source === "snapshot" &&
+            suggestions.data.candidates.length > 0 && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                Lista lokali z zapisanej bazy (usługa mapowa niedostępna)
+              </p>
+            )}
+          {suggestions.data.candidates.length === 0 &&
+          suggestions.data.venue_source === "snapshot" ? (
+            <div
+              role="alert"
+              className="rounded-lg bg-amber-50 px-3 py-4 text-center text-sm text-amber-900"
+            >
+              <p>
+                Usługa mapowa jest chwilowo niedostępna, a zapisana baza lokali nie obejmuje tego
+                miejsca.
+              </p>
+              <Button variant="secondary" className="mt-2" onClick={() => suggestions.refetch()}>
+                Spróbuj ponownie
+              </Button>
+            </div>
+          ) : suggestions.data.candidates.length === 0 ? (
             <p className="rounded-lg bg-slate-100 px-3 py-4 text-center text-sm text-slate-600">
               Brak lokali tego typu w okolicy — spróbuj innej kategorii
             </p>

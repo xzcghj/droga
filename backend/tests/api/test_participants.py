@@ -149,3 +149,17 @@ def test_geocode_endpoint_empty_query_422(client):
 
 def test_session_fixture_is_same_db(client, session):
     assert isinstance(session, Session)
+
+
+def test_participant_changes_clear_saved_invite(client, meetup_id):
+    murl = f"/api/v1/meetups/{meetup_id}"
+    venue = {"name": "K", "lat": 54.4, "lon": 18.6, "osm_id": "node/1"}
+    client.patch(murl, json={"chosen_venue": venue, "invite_message": "Stare"})
+    pid = client.post(url(meetup_id), json=person()).json()["id"]
+    assert client.get(murl).json()["invite_message"] is None
+    client.patch(murl, json={"invite_message": "Stare"})
+    client.patch(url(meetup_id, f"/{pid}"), json={"mode": "car"})
+    assert client.get(murl).json()["invite_message"] is None
+    client.patch(murl, json={"invite_message": "Stare"})
+    client.delete(url(meetup_id, f"/{pid}"))
+    assert client.get(murl).json()["invite_message"] is None

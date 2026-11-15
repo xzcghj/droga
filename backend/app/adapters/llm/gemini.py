@@ -9,11 +9,15 @@ from google.genai import types
 
 from app.adapters.llm.base import LLMBadOutputError, LLMUnavailableError, ToolSpec
 
+LLM_TIMEOUT_MS = 20_000
+
 
 class GeminiClient:
     def __init__(self, api_key: str, model: str, sdk_client: Any = None):
         self.model = model
-        self._sdk = sdk_client or genai.Client(api_key=api_key)
+        self._sdk = sdk_client or genai.Client(
+            api_key=api_key, http_options=types.HttpOptions(timeout=LLM_TIMEOUT_MS)
+        )
 
     def call_tool(self, system: str, user: str, tool: ToolSpec) -> dict:
         config = types.GenerateContentConfig(

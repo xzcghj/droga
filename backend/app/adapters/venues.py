@@ -100,10 +100,15 @@ class FallbackVenues:
     def find_with_source(
         self, category: VenueCategory, bbox: BBox, limit: int = 300
     ) -> tuple[list[Venue], Literal["overpass", "snapshot"]]:
+        primary_answered = False
         try:
             venues = self.primary.find(category, bbox, limit)
             if venues:
                 return venues, "overpass"
+            primary_answered = True
         except AdapterError:
             pass
-        return self.fallback.find(category, bbox, limit), "snapshot"
+        fallback = self.fallback.find(category, bbox, limit)
+        if not fallback and primary_answered:
+            return [], "overpass"
+        return fallback, "snapshot"

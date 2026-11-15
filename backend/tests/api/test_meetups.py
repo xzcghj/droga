@@ -87,3 +87,22 @@ def test_title_too_long_422_with_field_detail(client):
     r = client.post("/api/v1/meetups", json={**BASE, "title": "x" * 101})
     assert r.status_code == 422
     assert r.json()["error"]["details"][0]["field"] == "title"
+
+
+def test_changing_venue_or_time_clears_saved_invite(client):
+    m = create(client)
+    url = f"/api/v1/meetups/{m['id']}"
+    client.patch(url, json={"chosen_venue": VENUE, "invite_message": "Stare"})
+    assert client.get(url).json()["invite_message"] == "Stare"
+    other = {**VENUE, "osm_id": "node/999", "name": "Inna"}
+    assert client.patch(url, json={"chosen_venue": other}).json()["invite_message"] is None
+    client.patch(url, json={"invite_message": "Nowe"})
+    r = client.patch(url, json={"scheduled_at": "2026-11-22T18:00:00+01:00"})
+    assert r.json()["invite_message"] is None
+
+
+def test_title_change_keeps_saved_invite(client):
+    m = create(client)
+    url = f"/api/v1/meetups/{m['id']}"
+    client.patch(url, json={"chosen_venue": VENUE, "invite_message": "Zostaje"})
+    assert client.patch(url, json={"title": "Nowy"}).json()["invite_message"] == "Zostaje"

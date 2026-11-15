@@ -6,11 +6,15 @@ import anthropic
 
 from app.adapters.llm.base import LLMBadOutputError, LLMUnavailableError, ToolSpec
 
+LLM_TIMEOUT_S = 20.0
+
 
 class ClaudeClient:
     def __init__(self, api_key: str, model: str, sdk_client: Any = None):
         self.model = model
-        self._sdk = sdk_client or anthropic.Anthropic(api_key=api_key)
+        self._sdk = sdk_client or anthropic.Anthropic(
+            api_key=api_key, timeout=LLM_TIMEOUT_S, max_retries=1
+        )
 
     def call_tool(self, system: str, user: str, tool: ToolSpec) -> dict:
         try:

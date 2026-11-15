@@ -64,3 +64,12 @@ it("empty list shows hint", async () => {
     await screen.findByText("Brak lokali tego typu w okolicy — spróbuj innej kategorii"),
   ).toBeInTheDocument();
 });
+
+it("empty snapshot is reported as an outage with retry", async () => {
+  mockApi({ "GET /meetups/1/suggestions": { venue_source: "snapshot", candidates: [] } });
+  renderWithProviders(<SuggestionsPanel meetup={meetupFixture()} onHighlight={() => {}} />);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Znajdź miejsce" }));
+  expect(await screen.findByText(/Usługa mapowa jest chwilowo niedostępna/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Spróbuj ponownie" })).toBeInTheDocument();
+  expect(screen.queryByText(/spróbuj innej kategorii/)).not.toBeInTheDocument();
+});

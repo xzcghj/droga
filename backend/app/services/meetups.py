@@ -83,6 +83,7 @@ class MeetupService:
     def update(self, meetup_id: int, data: MeetupUpdate) -> Meetup:
         meetup = self.get(meetup_id)
         changes = data.model_dump(exclude_unset=True)
+        old_venue_id = meetup.chosen_venue_osm_id
         if "chosen_venue" in changes:
             venue = data.chosen_venue
             meetup.chosen_venue_name = venue.name if venue else None
@@ -98,6 +99,13 @@ class MeetupService:
                     "Niepoprawne dane wejściowe.",
                     [{"field": field, "message": "Pole nie może być puste."}],
                 )
+        facts_changed = "chosen_venue" in data.model_fields_set and (
+            data.chosen_venue is None or data.chosen_venue.osm_id != old_venue_id
+        )
+        if "scheduled_at" in changes and changes["scheduled_at"] != meetup.scheduled_at:
+            facts_changed = True
+        if facts_changed and "invite_message" not in changes:
+            meetup.invite_message = None  # stare zaproszenie ma nieaktualne miejsce/godziny
         for key, value in changes.items():
             setattr(meetup, key, value)
         meetup.updated_at = utcnow()

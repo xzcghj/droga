@@ -166,3 +166,18 @@ def test_container_takes_provider_from_factory():
     assert c.ai_provider == "gemini" and isinstance(c.llm, GeminiClient)
     c = build_container(settings(llm_provider="gemini"))
     assert c.ai_provider is None and c.llm is None
+
+
+def test_sdk_clients_are_built_with_timeouts(monkeypatch):
+    import app.adapters.llm.claude as claude_mod
+    import app.adapters.llm.gemini as gemini_mod
+
+    seen = {}
+    monkeypatch.setattr(gemini_mod.genai, "Client", lambda **kw: seen.setdefault("gemini", kw))
+    monkeypatch.setattr(
+        claude_mod.anthropic, "Anthropic", lambda **kw: seen.setdefault("claude", kw)
+    )
+    GeminiClient("k", "m")
+    ClaudeClient("k", "m")
+    assert 0 < seen["gemini"]["http_options"].timeout <= 30_000  # ms
+    assert 0 < seen["claude"]["timeout"] <= 30 and seen["claude"]["max_retries"] <= 1

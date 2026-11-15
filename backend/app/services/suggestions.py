@@ -47,16 +47,21 @@ def travel_times(
         p = people[col]
         grid[d][col] = TravelTime(p.id, math.ceil(minutes - 1e-9), p.mode, source)
 
+    router_down = False
     for profile in ROUTED_PROFILES:
         cols = [i for i, p in enumerate(people) if p.mode == profile]
         if not cols or not destinations:
             continue
         sources = [people[i].point for i in cols]
-        try:
-            matrix = container.routers[profile.value].matrix(profile.value, sources, destinations)
-            source = "osrm"
-        except AdapterError:
-            matrix, source = None, "estimate"
+        matrix, source = None, "estimate"
+        if not router_down:
+            try:
+                matrix = container.routers[profile.value].matrix(
+                    profile.value, sources, destinations
+                )
+                source = "osrm"
+            except AdapterError:
+                router_down = True  # nie czekamy na kolejne timeouty w tym samym żądaniu
         fallback = container.fallback_router.matrix(profile.value, sources, destinations)
         for s, col in enumerate(cols):
             for d in range(len(destinations)):

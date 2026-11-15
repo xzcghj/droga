@@ -88,9 +88,9 @@ def test_invite_not_ready_422(kw):
 
 
 def test_invite_uses_ai_message():
-    llm = FakeLLM({"message": "Hej, widzimy się w Kawiarni Łąka!"})
-    out = InviteService(container(llm)).generate(meetup())
-    assert out.source == "ai" and out.message == "Hej, widzimy się w Kawiarni Łąka!"
+    msg = "Hej, Kawiarnia Łąka! Łukasz wychodzi 17:35, Ola 17:35."
+    out = InviteService(container(FakeLLM({"message": msg}))).generate(meetup())
+    assert out.source == "ai" and out.message == msg
 
 
 def test_invite_falls_back_to_template_without_llm():
@@ -145,3 +145,22 @@ def test_invite_endpoint(client):
     assert r.status_code == 200, r.text
     assert r.json()["source"] == "template" and "Kawiarnia" in r.json()["message"]
     assert client.get(f"/api/v1/meetups/{mid}").json()["invite_message"] is None
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Hej! Kawiarnia Łąka, Łukasz wychodzi 17:30, Ola 17:35.",  # zmieniona godzina
+        "Hej! Widzimy się, Łukasz 17:35, Ola 17:35.",  # brak nazwy miejsca
+        "Hej! Kawiarnia Łąka, Łukasz 17:35.",  # brak osoby
+    ],
+)
+def test_invite_rejects_ai_message_that_breaks_facts(message):
+    out = InviteService(container(FakeLLM({"message": message}))).generate(meetup())
+    assert out.source == "template"
+
+
+def test_invite_accepts_ai_message_with_all_facts():
+    msg = "Hej ekipa ☕ Kawiarnia Łąka, sobota 18:00! Łukasz wychodzi 17:35, Ola też 17:35."
+    out = InviteService(container(FakeLLM({"message": msg}))).generate(meetup())
+    assert out.source == "ai"

@@ -13,6 +13,7 @@ import { ChosenVenueBanner } from "../features/suggestions/ChosenVenueBanner";
 import { SuggestionsPanel } from "../features/suggestions/SuggestionsPanel";
 import { formatDateTime } from "../lib/format";
 import { CATEGORIES, CATEGORY_ICONS } from "../lib/modes";
+import { lineupKey } from "../lib/lineup";
 import { useMediaQuery } from "../lib/useMediaQuery";
 
 type Tab = "list" | "map";
@@ -24,7 +25,11 @@ export function MeetupPage() {
   const [tab, setTab] = useState<Tab>("list");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   // Tylko odczyt z cache — zapytanie uruchamia przycisk „Znajdź miejsce” w panelu.
-  const cachedSuggestions = useSuggestions(id, false).data;
+  const cachedSuggestions = useSuggestions(
+    id,
+    meetup.data ? lineupKey(meetup.data) : "",
+    false,
+  ).data;
 
   if (meetup.isPending) {
     return (

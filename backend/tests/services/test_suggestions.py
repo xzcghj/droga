@@ -158,3 +158,9 @@ def test_travel_times_rows_are_destinations():
     rows = travel_times(container(), people, [NEAR.point, FAR.point])
     assert len(rows) == 2 and all(len(r) == 2 for r in rows)
     assert [t.participant_id for t in rows[0]] == [1, 2]
+
+
+def test_router_failure_skips_remaining_profiles():
+    router = FailingRouter()
+    SuggestionService(container(router)).suggest(meetup("walk", "bike", "car"), limit=5)
+    assert router.calls == 1

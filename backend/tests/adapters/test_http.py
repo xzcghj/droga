@@ -43,3 +43,16 @@ def test_request_json_network_error_is_adapter_error():
     client = httpx.Client(transport=httpx.MockTransport(handler))
     with pytest.raises(AdapterError):
         request_json(client, "GET", "https://x.test/", retries=0)
+
+
+def test_request_json_does_not_retry_timeouts():
+    calls = []
+
+    def handler(r):
+        calls.append(r)
+        raise httpx.ReadTimeout("slow")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    with pytest.raises(AdapterError):
+        request_json(client, "GET", "https://x.test/")
+    assert len(calls) == 1

@@ -157,3 +157,11 @@ def test_fallback_venues_reports_snapshot_source():
 def test_fallback_venues_uses_snapshot_on_empty_primary():
     src = FallbackVenues(Static([]), Static([V]))
     assert src.find_with_source(VenueCategory.cafe, BOX) == ([V], "snapshot")
+
+
+def test_fallback_venues_both_empty_reports_overpass():
+    # Overpass odpowiedział pustą listą, snapshot też nic nie ma → to nie jest awaria.
+    assert FallbackVenues(Static([]), Static([])).find_with_source(VenueCategory.cafe, BOX) == (
+        [],
+        "overpass",
+    )

@@ -84,11 +84,19 @@ class ParticipantService:
         self.meetups.get(meetup_id)
         self._ensure_room(meetup_id, len(items))
         built = [self._build(meetup_id, item) for item in items]
+        self._invalidate_invite(meetup_id)
         self.session.add_all(built)
         self.session.commit()
         for p in built:
             self.session.refresh(p)
         return built
+
+    def _invalidate_invite(self, meetup_id: int) -> None:
+        """Zapisane zaproszenie zawiera czasy dojazdu — po zmianie składu jest nieaktualne."""
+        meetup = self.meetups.get(meetup_id)
+        if meetup.invite_message is not None:
+            meetup.invite_message = None
+            self.session.add(meetup)
 
     def get(self, meetup_id: int, pid: int) -> Participant:
         self.meetups.get(meetup_id)
@@ -120,6 +128,7 @@ class ParticipantService:
         for field in ("name", "start_label", "mode"):
             if field in changes:
                 setattr(p, field, changes[field])
+        self._invalidate_invite(meetup_id)
         self.session.add(p)
         self.session.commit()
         self.session.refresh(p)
@@ -127,5 +136,6 @@ class ParticipantService:
 
     def delete(self, meetup_id: int, pid: int) -> None:
         p = self.get(meetup_id, pid)
+        self._invalidate_invite(meetup_id)
         self.session.delete(p)
         self.session.commit()

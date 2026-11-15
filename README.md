@@ -16,7 +16,7 @@ Zadanie rekrutacyjne Xelerit: Full-Stack MVP o tematyce transportu.
 - **„Wklej z czatu”** — AI zamienia wiadomość z grupowego czatu na *szkic* listy uczestników, który poprawiasz i zatwierdzasz.
 - **Zaproszenie na czat** — kod liczy czasy dojazdu i godziny wyjścia, AI tylko redaguje tekst. Bez AI ta sama treść powstaje z szablonu.
 - **Mapa** z uczestnikami, kandydatami i liniami dojazdu po najechaniu na propozycję.
-- **Działa bez kluczy i bez sieci AI** — każda zewnętrzna usługa ma fallback.
+- **Działa bez kluczy AI** — każda zewnętrzna usługa ma fallback (lokale offline po jednorazowym zbudowaniu snapshotu — patrz niżej).
 
 ## Szybki start
 
@@ -113,7 +113,7 @@ flowchart LR
 
 | Zasada | Jak egzekwowana |
 |---|---|
-| Żadna liczba w UI nie pochodzi z modelu | czasy, godziny wyjścia i ranking liczy kod; prompt zaproszenia zabrania zmiany liczb |
+| Żadna liczba w UI nie pochodzi z modelu | czasy, godziny wyjścia i ranking liczy kod; tekst zaproszenia od AI jest akceptowany tylko, gdy zawiera miejsce, każdą osobę i jej godzinę wyjścia i nie podaje innych godzin — inaczej szablon |
 | AI nigdy nie zapisuje do bazy | `/ai/parse-participants` i `/invite` zwracają szkic; zapis tylko przez zwykłe endpointy po akcji użytkownika |
 | Wynik zgodny ze schematem | wymuszone wywołanie jednego narzędzia + walidacja Pydantic; niezgodność ⇒ `502 ai_bad_output` |
 | Prompt injection | tekst użytkownika = dane; model nie ma narzędzi ze skutkami ubocznymi; limit długości wejścia |
@@ -132,7 +132,8 @@ flowchart LR
 | Nominatim nie znajduje adresu | `422 address_not_found`; w szkicu AI wiersz oznaczony do poprawy |
 | Nominatim niedostępny | `503 geocoding_unavailable` |
 | OSRM niedostępny | `HaversineRouter`, `data_source: "estimate"`, etykieta „≈ szacunek” |
-| Overpass niedostępny (oba endpointy) | snapshot, `venue_source: "snapshot"`, notka w UI |
+| Overpass niedostępny (oba endpointy) | snapshot, `venue_source: "snapshot"`, notka w UI; pusty snapshot ⇒ komunikat o awarii + „Spróbuj ponownie” |
+| Usługa wolno odpowiada | timeout 8 s bez ponowień; po pierwszej awarii OSRM pozostałe profile od razu szacunkiem; AI: timeout 20 s ⇒ szablon |
 
 ## API
 

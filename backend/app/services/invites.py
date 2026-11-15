@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Literal
 
@@ -133,6 +134,22 @@ class _AIInvite(BaseModel):
         return v.strip()
 
 
+_HHMM = re.compile(r"\b([01]?\d|2[0-3])[:.]([0-5]\d)\b")
+
+
+def respects_facts(message: str, facts: InviteFacts) -> bool:
+    """Tekst AI musi zawierać miejsce, każdą osobę i jej godzinę wyjścia
+    oraz nie może podawać godzin spoza faktów (żadna liczba nie pochodzi z modelu)."""
+    allowed = {p.depart_at for p in facts.people} | {facts.when[-5:]}
+    times = {f"{int(h):02d}:{m}" for h, m in _HHMM.findall(message)}
+    return (
+        facts.venue in message
+        and all(p.name in message for p in facts.people)
+        and {p.depart_at for p in facts.people} <= times
+        and times <= allowed
+    )
+
+
 class InviteService:
     def __init__(self, container: Container):
         self.container = container
@@ -152,7 +169,9 @@ class InviteService:
         if llm is not None:
             try:
                 raw = llm.call_tool(INVITE_SYSTEM_PROMPT, facts_as_prompt(facts), INVITE_TOOL)
-                return InviteRead(message=_AIInvite.model_validate(raw).message, source="ai")
+                message = _AIInvite.model_validate(raw).message
+                if respects_facts(message, facts):
+                    return InviteRead(message=message, source="ai")
             except (LLMUnavailableError, LLMBadOutputError, ValidationError):
                 pass  # tryb bez AI: ta sama treść z szablonu
         return InviteRead(message=render_template(facts), source="template")

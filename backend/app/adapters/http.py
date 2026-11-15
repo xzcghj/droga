@@ -23,9 +23,8 @@ def request_json(
         try:
             response = client.request(method, url, **kwargs)
         except httpx.HTTPError as exc:
-            if attempt < retries:
-                attempt += 1
-                continue
+            # Bez ponowień przy timeoucie/błędzie sieci — spec §8 ponawia tylko 429/5xx,
+            # a każda próba to do 8 s czekania użytkownika.
             raise AdapterError(f"{method} {url}: {exc}") from exc
         if response.is_success:
             try:

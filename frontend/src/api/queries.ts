@@ -19,7 +19,7 @@ export const qk = {
   meta: ["meta"] as const,
   meetups: ["meetups"] as const,
   meetup: (id: number) => ["meetups", id] as const,
-  suggestions: (id: number) => ["meetups", id, "suggestions"] as const,
+  suggestions: (id: number, lineup: string) => ["meetups", id, "suggestions", lineup] as const,
 };
 
 export function useMeta() {
@@ -74,7 +74,6 @@ function useParticipantsInvalidation(meetupId: number) {
   return () =>
     Promise.all([
       qc.invalidateQueries({ queryKey: qk.meetup(meetupId), exact: true }),
-      qc.resetQueries({ queryKey: qk.suggestions(meetupId), exact: true }),
       qc.invalidateQueries({ queryKey: qk.meetups, exact: true }),
     ]);
 }
@@ -128,9 +127,11 @@ export function useGeocode() {
   });
 }
 
-export function useSuggestions(id: number, enabled: boolean) {
+/** Ranking dla konkretnego składu (`lineup` = lineupKey(meetup)). Zmiana składu = nowy klucz:
+ *  stary ranking nie jest pokazywany, a nowy liczy się dopiero po „Znajdź miejsce”. */
+export function useSuggestions(id: number, lineup: string, enabled: boolean) {
   return useQuery({
-    queryKey: qk.suggestions(id),
+    queryKey: qk.suggestions(id, lineup),
     queryFn: () => api<SuggestionsRead>(`/meetups/${id}/suggestions?limit=5`),
     enabled,
     staleTime: 10 * 60 * 1000,
