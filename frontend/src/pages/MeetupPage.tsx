@@ -5,6 +5,7 @@ import { useMeetup } from "../api/queries";
 import { ErrorState } from "../components/ErrorState";
 import { MeetupMap } from "../components/MeetupMap";
 import { Skeleton } from "../components/ui/Spinner";
+import { ChatImport } from "../features/participants/ChatImport";
 import { ParticipantForm } from "../features/participants/ParticipantForm";
 import { ParticipantList } from "../features/participants/ParticipantList";
 import { formatDateTime } from "../lib/format";
@@ -89,7 +90,12 @@ export function MeetupPage() {
                 Uczestnicy ({m.participants.length}/10)
               </h2>
               <ParticipantList meetupId={m.id} participants={m.participants} />
-              {m.participants.length < 10 && <ParticipantForm meetupId={m.id} />}
+              {m.participants.length < 10 && (
+                <>
+                  <ParticipantForm meetupId={m.id} />
+                  <ChatImport meetupId={m.id} />
+                </>
+              )}
             </section>
           </aside>
         )}

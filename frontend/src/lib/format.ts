@@ -63,3 +63,10 @@ export function initials(name: string): string {
     .join("");
   return letters.slice(0, 2).toUpperCase() || "?";
 }
+
+/** „1 osobę / 2 osoby / 5 osób” (biernik, np. „Dodaj 2 osoby”). */
+export function osobyAcc(n: number): string {
+  if (n === 1) return "1 osobę";
+  if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return `${n} osoby`;
+  return `${n} osób`;
+}
