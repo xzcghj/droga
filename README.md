@@ -61,8 +61,11 @@ Domyślny model: `gemini-3.5-flash-lite` (darmowy próg). Inny model: `LLM_MODEL
 Gdy Overpass API jest niedostępne, ranking korzysta z zapisanej listy lokali Trójmiasta. Repozytorium zawiera pusty plik (środowisko, w którym powstał kod, nie miało dostępu do Overpass — lokali nie wymyślaliśmy). Zbuduj go jednym poleceniem:
 
 ```bash
+cp .env.example .env        # wpisz swój e-mail w OSM_USER_AGENT (Overpass odrzuca zastępcze adresy)
 cd backend && python scripts/build_venue_snapshot.py
 ```
+
+Jeśli skrypt wypisze `406`, serwer nie zaakceptował identyfikacji (sprawdź `OSM_USER_AGENT`); `429`/`504` oznacza przeciążenie — spróbuj za kilka minut.
 
 Skrypt pobiera do ~40 nazwanych obiektów na kategorię i zapisuje `backend/data/venues_trojmiasto.json` (© OpenStreetMap contributors, ODbL).
 

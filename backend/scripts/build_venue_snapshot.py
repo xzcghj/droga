@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.adapters.http import AdapterError, request_json  # noqa: E402
 from app.adapters.venues import CATEGORY_TAGS  # noqa: E402
 from app.config import Settings  # noqa: E402
+from app.container import osm_headers  # noqa: E402
 from app.domain.types import VenueCategory  # noqa: E402
 
 BOX = "54.30,18.40,54.60,18.80"
@@ -32,15 +33,21 @@ def fetch(client: httpx.Client, urls: list[str], category: VenueCategory) -> lis
     for url in urls:
         try:
             return request_json(client, "POST", url, data={"data": query})["elements"]
-        except (AdapterError, KeyError):
-            continue
-    raise SystemExit(f"Overpass niedostępny dla kategorii {category} — plik nie został zmieniony.")
+        except (AdapterError, KeyError) as exc:
+            print(f"  {url}: {exc}")
+    raise SystemExit(
+        f"Overpass niedostępny dla kategorii {category} — plik nie został zmieniony.\n"
+        "406 = serwer nie akceptuje identyfikacji: ustaw OSM_USER_AGENT z prawdziwym e-mailem;\n"
+        "429/504 = serwer przeciążony: spróbuj za kilka minut."
+    )
 
 
 def main() -> None:
     settings = Settings()
     rows: list[dict] = []
-    with httpx.Client(timeout=90, headers={"User-Agent": settings.osm_user_agent}) as client:
+    if "example.com" in settings.osm_user_agent:
+        print("Uwaga: OSM_USER_AGENT ma zastępczy e-mail — Overpass może odrzucić zapytanie (406).")
+    with httpx.Client(timeout=90, headers=osm_headers(settings)) as client:
         for category in VenueCategory:
             elements = fetch(client, settings.overpass_urls, category)
             # Najpierw obiekty z website/opening_hours — zwykle lepiej opisane i aktywne.

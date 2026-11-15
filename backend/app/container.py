@@ -34,8 +34,20 @@ class Container:
     suggestion_cache: Any = None
 
 
+PROJECT_URL = "https://github.com/xzcghj/droga"
+
+
+def osm_headers(settings: Settings) -> dict[str, str]:
+    return {
+        "User-Agent": settings.osm_user_agent,
+        "Referer": PROJECT_URL,
+        "Accept": "application/json, */*;q=0.8",
+    }
+
+
 def build_container(settings: Settings) -> Container:
-    client = httpx.Client(timeout=settings.http_timeout_s)
+    # Usługi OSM wymagają identyfikacji aplikacji — bez niej Overpass odpowiada 406.
+    client = httpx.Client(timeout=settings.http_timeout_s, headers=osm_headers(settings))
     nominatim_limiter = RateLimiter(1.0)
     osrm = OsrmRouter(client, settings.osrm_base_url)
     llm, provider = build_llm(settings)

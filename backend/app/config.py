@@ -9,7 +9,10 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # ../.env = główny katalog repo (uruchomienie z backend/), .env = katalog bieżący (wygrywa).
+    model_config = SettingsConfigDict(
+        env_file=("../.env", ".env"), env_file_encoding="utf-8", extra="ignore"
+    )
 
     llm_provider: Literal["gemini", "claude", "none"] = "gemini"
     gemini_api_key: str | None = None
