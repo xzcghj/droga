@@ -1,4 +1,14 @@
-import { Bike, Car, Footprints, TramFront, type LucideIcon } from "lucide-react";
+import {
+  Beer,
+  Bike,
+  Car,
+  Coffee,
+  Footprints,
+  TramFront,
+  Trees,
+  UtensilsCrossed,
+  type LucideIcon,
+} from "lucide-react";
 import type { TravelMode, VenueCategory } from "../api/client";
 
 export interface ModeInfo {
@@ -23,3 +33,12 @@ export const CATEGORIES: Record<VenueCategory, string> = {
   restaurant: "Restauracja",
   park: "Park",
 };
+
+export const CATEGORY_ICONS: Record<VenueCategory, LucideIcon> = {
+  cafe: Coffee,
+  bar: Beer,
+  restaurant: UtensilsCrossed,
+  park: Trees,
+};
+
+export const CATEGORY_ORDER: VenueCategory[] = ["cafe", "bar", "restaurant", "park"];
