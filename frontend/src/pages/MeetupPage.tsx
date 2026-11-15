@@ -1,13 +1,15 @@
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useMeetup } from "../api/queries";
+import { useMeetup, useSuggestions } from "../api/queries";
 import { ErrorState } from "../components/ErrorState";
 import { MeetupMap } from "../components/MeetupMap";
 import { Skeleton } from "../components/ui/Spinner";
 import { ChatImport } from "../features/participants/ChatImport";
 import { ParticipantForm } from "../features/participants/ParticipantForm";
 import { ParticipantList } from "../features/participants/ParticipantList";
+import { ChosenVenueBanner } from "../features/suggestions/ChosenVenueBanner";
+import { SuggestionsPanel } from "../features/suggestions/SuggestionsPanel";
 import { formatDateTime } from "../lib/format";
 import { CATEGORIES, CATEGORY_ICONS } from "../lib/modes";
 import { useMediaQuery } from "../lib/useMediaQuery";
@@ -19,6 +21,9 @@ export function MeetupPage() {
   const meetup = useMeetup(id);
   const wide = useMediaQuery("(min-width: 768px)");
   const [tab, setTab] = useState<Tab>("list");
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  // Tylko odczyt z cache — zapytanie uruchamia przycisk „Znajdź miejsce” w panelu.
+  const cachedSuggestions = useSuggestions(id, false).data;
 
   if (meetup.isPending) {
     return (
@@ -85,6 +90,7 @@ export function MeetupPage() {
       <div className="flex min-h-0 flex-1">
         {showPanel && (
           <aside className="w-full space-y-6 overflow-y-auto p-4 md:w-[420px] md:shrink-0 md:border-r md:border-slate-200">
+            <ChosenVenueBanner meetup={m} />
             <section aria-labelledby="people-h" className="space-y-3">
               <h2 id="people-h" className="text-base font-semibold">
                 Uczestnicy ({m.participants.length}/10)
@@ -97,11 +103,22 @@ export function MeetupPage() {
                 </>
               )}
             </section>
+            <section aria-labelledby="venue-h" className="space-y-3">
+              <h2 id="venue-h" className="text-base font-semibold">
+                Gdzie się spotkać?
+              </h2>
+              <SuggestionsPanel meetup={m} onHighlight={setHighlightedId} />
+            </section>
           </aside>
         )}
         {showMap && (
           <div className="min-h-[60vh] flex-1 md:min-h-0">
-            <MeetupMap participants={m.participants} chosen={m.chosen_venue} />
+            <MeetupMap
+              participants={m.participants}
+              candidates={cachedSuggestions?.candidates ?? []}
+              chosen={m.chosen_venue}
+              highlightedId={highlightedId ?? m.chosen_venue?.osm_id ?? null}
+            />
           </div>
         )}
       </div>
