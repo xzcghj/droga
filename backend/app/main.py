@@ -7,11 +7,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session
 
 from app.api import ai, geocode, meetups, meta, participants, suggestions
 from app.api.errors import register_error_handlers
 from app.config import Settings
 from app.container import Container, build_container
+from app.db.seed import seed_demo
 from app.db.session import init_db, make_engine
 
 API_PREFIX = "/api/v1"
@@ -26,6 +28,9 @@ def create_app(settings: Settings | None = None, container: Container | None = N
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         init_db(engine)
+        if settings.seed_demo:
+            with Session(engine) as session:
+                seed_demo(session)
         yield
 
     app = FastAPI(title="Pół Drogi", version="1.0.0", lifespan=lifespan)
